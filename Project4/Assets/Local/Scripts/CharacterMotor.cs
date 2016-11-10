@@ -18,6 +18,9 @@ public class CharacterMotor : MonoBehaviour {
 	// A varible to hold the start location
 	private Vector3 startPosition;
 
+	// Jump force
+	public float jumpForce = 10;
+
 	// the momentum for the jump
 	public float momentum = 0;
 
@@ -26,13 +29,20 @@ public class CharacterMotor : MonoBehaviour {
 		// Set the start location when we first "spawn"
 		startPosition = transform.position;
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
 
 		// if we hit P on the keyboard, reset the player location to the start location
 		if(Input.GetKeyDown(KeyCode.P)){
 			transform.position = startPosition;
+		}
+
+		// check if we hit the jump key
+		if(Input.GetKeyDown(KeyCode.Space)){
+
+			// trigger the jump method
+			Jump();
 		}
 
 		// if momentum is greater than 1, reduce the momentum over time using a lerp method. Else, set it to 0;
@@ -74,9 +84,23 @@ public class CharacterMotor : MonoBehaviour {
 
 	}
 
+
+	// Jump is.. jump..
+	void Jump(){
+
+		// set the parent transform to null 
+		transform.parent = null;
+
+		// Set the momentum to be subtracted over time
+		momentum = 40;
+
+		// apply a small move up so that fall triggers
+		playerController.Move(Vector3.up* jumpForce*Time.deltaTime);
+	}
+
 	// Check if the ControllerCollider Hit anything
 	void OnControllerColliderHit(ControllerColliderHit hit){
-		
+
 		// If the object we hit has a rigidbody, add a force to that rigidbody 
 		if(hit.rigidbody != null){
 			Vector3 forceDirection = hit.transform.position - transform.position;

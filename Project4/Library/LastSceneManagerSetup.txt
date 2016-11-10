@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Local/Scenes/CharacterAnimation.unity
+- path: Assets/Local/Scenes/DefaultRing.unity
   isLoaded: 1
   isActive: 1
