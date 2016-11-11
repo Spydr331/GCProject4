@@ -3,6 +3,16 @@ using System.Collections;
 
 public class CharacterMotor : MonoBehaviour {
 
+	public bool isCharacter = false;
+	public GameObject enemyGameObject;
+	public GameObject hitCheckGameObject;
+	public float rotationSpeed;
+	public float distanceGrab = 2.6f;
+
+	private bool grabbed = false;
+
+	public Animator characterAnimator;
+
 	// set the move speed for the character in the inspector
 	public float moveSpeed = 10;
 
@@ -17,33 +27,45 @@ public class CharacterMotor : MonoBehaviour {
 
 	// A varible to hold the start location
 	private Vector3 startPosition;
-
-	// Jump force
-	public float jumpForce = 10;
+	private float speedRatio = 1;
 
 	// the momentum for the jump
 	public float momentum = 0;
 
+	public void gotGrabbed() {
+		grabbed = true;
+		characterAnimator.SetBool ("GrappledBy", true);
+	}
+
+	public void CheckForGrapple() {
+		Vector3 grabDirectionRay = hitCheckGameObject.transform.TransformDirection (Vector3.forward);
+
+		RaycastHit hit;
+
+		if (Physics.Raycast (hitCheckGameObject.transform.position, grabDirectionRay, out hit)) {
+			if (hit.distance < distanceGrab && hit.transform.CompareTag("Wrestler")) {
+				enemyGameObject = hit.transform.gameObject;
+				Grappling ();
+			} else {
+				Debug.Log ("TOO FAR");
+			}
+		}
+
+		//Physics.Raycast(grabRay, 
+
+
+	}
+
 	// Use this for initialization
 	void Start () {
 		// Set the start location when we first "spawn"
+		if(enemyGameObject != null)
+			transform.forward = enemyGameObject.transform.position - transform.position;
 		startPosition = transform.position;
 	}
-
+	
 	// Update is called once per frame
 	void Update () {
-
-		// if we hit P on the keyboard, reset the player location to the start location
-		if(Input.GetKeyDown(KeyCode.P)){
-			transform.position = startPosition;
-		}
-
-		// check if we hit the jump key
-		if(Input.GetKeyDown(KeyCode.Space)){
-
-			// trigger the jump method
-			Jump();
-		}
 
 		// if momentum is greater than 1, reduce the momentum over time using a lerp method. Else, set it to 0;
 		if(momentum>1)
@@ -52,12 +74,43 @@ public class CharacterMotor : MonoBehaviour {
 			momentum = 0;
 
 		// output the result of IsGrounded to the log
-		Debug.Log(isGrounded);
+		//Debug.Log(isGrounded);
 
 		// If we are not grounded, trigger the fall Method
 		if(!isGrounded)
-			Fall();
+			Fall ();
 
+		if (isCharacter) {
+			// Prevent movement when grappling
+			Move ();
+
+			// if we hit P on the keyboard, reset the player location to the start location
+			if(Input.GetKeyDown(KeyCode.P)){
+				transform.position = startPosition;
+			}
+
+			if(Input.GetKeyDown(KeyCode.Q)){
+				characterAnimator.SetTrigger ("Grappling");
+			}
+
+			if (Input.GetKeyDown (KeyCode.E) && grabbed) {
+				cancelGrapple ();
+			}
+		}
+
+	}
+
+	// Check if the ControllerCollider Hit anything
+	void OnControllerColliderHit(ControllerColliderHit hit){
+		
+		// If the object we hit has a rigidbody, add a force to that rigidbody 
+		if(hit.rigidbody != null){
+			Vector3 forceDirection = hit.transform.position - transform.position;
+			hit.rigidbody.AddForce(forceDirection *100);
+		}
+	}
+		
+	void Move(){
 		// Create a varible to store player input
 		Vector3 inputDirection;
 
@@ -74,45 +127,59 @@ public class CharacterMotor : MonoBehaviour {
 		inputDirection *= Time.deltaTime;
 
 		// Ajust speed acording to the movement speed we set up in the inspector
-		inputDirection *= moveSpeed;
+		inputDirection *= (moveSpeed * speedRatio);
 
 		// transform.position would have us dictate the position of the transform
 		//transform.position += inputDirection;
 
 		// while CharacterController.Move allows us to take colliders into consideration
-		playerController.Move(transform.TransformDirection(inputDirection));
+		transform.Translate(inputDirection, Space.World);
 
-	}
-
-
-	// Jump is.. jump..
-	void Jump(){
-
-		// set the parent transform to null 
-		transform.parent = null;
-
-		// Set the momentum to be subtracted over time
-		momentum = 40;
-
-		// apply a small move up so that fall triggers
-		playerController.Move(Vector3.up* jumpForce*Time.deltaTime);
-	}
-
-	// Check if the ControllerCollider Hit anything
-	void OnControllerColliderHit(ControllerColliderHit hit){
-
-		// If the object we hit has a rigidbody, add a force to that rigidbody 
-		if(hit.rigidbody != null){
-			Vector3 forceDirection = hit.transform.position - transform.position;
-			hit.rigidbody.AddForce(forceDirection *100);
+		if (enemyGameObject != null) {
+			// Rotate character toward enemy
+			Vector3 targetDirection = enemyGameObject.transform.position - transform.position;
+			transform.forward = Vector3.RotateTowards (transform.forward, targetDirection, rotationSpeed * Time.deltaTime, 0);
 		}
+	}
+
+	void Grappling() {
+		grabbed = true;
+
+		speedRatio = 0.5f;
+
+		// Put opponent in current players object
+		enemyGameObject.transform.parent = transform;
+
+		// Rotate and position opponent
+		enemyGameObject.transform.forward = transform.position - enemyGameObject.transform.position;
+		enemyGameObject.transform.position = transform.position + transform.forward * distanceGrab;
+
+		// Set Animations
+		characterAnimator.SetBool("Grappled", true);
+		enemyGameObject.BroadcastMessage ("gotGrabbed");
+
+
+
+	}
+
+	void freedFromGrapple() {
+		characterAnimator.SetBool("GrappledBy", false);
+	}
+
+	void cancelGrapple() {
+		grabbed = false;
+		speedRatio = 1f;
+
+		enemyGameObject.transform.parent = null;
+
+		characterAnimator.SetBool("Grappled", false);
+		enemyGameObject.BroadcastMessage ("freedFromGrapple");
 	}
 
 	// Fall Method to make the character fall!
 	void Fall(){
-
 		// If falling, set parent to null, this way if they fall off a platform, the platform's movment will no longer manipulate the players position in air
-		transform.parent = null;
+		//transform.parent = null;
 
 		Vector3 upMovment = Vector3.up * momentum * Time.deltaTime;
 		// apply fall via Move
@@ -129,7 +196,7 @@ public class CharacterMotor : MonoBehaviour {
 
 			// Draw ray allows us to visualize the ray in the editor. Its "Direction" portion works differntly from the direction in a raycast ray. 
 			//It's limit is set by the length of the direction
-			Debug.DrawRay(transform.position,Vector3.down*groundedDistanceCheck);
+			//Debug.DrawRay(transform.position,Vector3.down*groundedDistanceCheck);
 
 			// create a varible of type bool to see if we hit something. 
 			bool didHitSomething;
@@ -144,7 +211,7 @@ public class CharacterMotor : MonoBehaviour {
 			// if we hit something, set it as our parent object ot inherid its motion
 			if(hit.transform!= null)
 			{
-				transform.parent = hit.transform;
+				//transform.parent = hit.transform;
 			}
 
 			// return the bool. 
