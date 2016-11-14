@@ -3,18 +3,23 @@ using System.Collections;
 
 public class CharacterMotor : MonoBehaviour {
 
-	public bool isCharacter = false;
 	public GameObject enemyGameObject;
 	public GameObject hitCheckGameObject;
-	public float rotationSpeed;
+
+	public Vector3 grabbedPosition;
+
+	public bool isCharacter = false;
 	public float distanceGrab = 2.6f;
 
+	// States
 	private bool grabbed = false;
+	private bool grabbing = false;
 
 	public Animator characterAnimator;
 
 	// set the move speed for the character in the inspector
 	public float moveSpeed = 10;
+	public float rotationSpeed = 2f;
 
 	// set the fall speed for the character in the inspector
 	public float fallSpeed = 30;
@@ -33,8 +38,17 @@ public class CharacterMotor : MonoBehaviour {
 	public float momentum = 0;
 
 	public void gotGrabbed() {
+		grabbedPosition = transform.localPosition;
 		grabbed = true;
 		characterAnimator.SetBool ("GrappledBy", true);
+	}
+
+	public void grapplingStart() {
+		grabbing = true;
+	}
+
+	public void grapplingEnd() {
+		grabbing = false;
 	}
 
 	public void CheckForGrapple() {
@@ -50,10 +64,6 @@ public class CharacterMotor : MonoBehaviour {
 				Debug.Log ("TOO FAR");
 			}
 		}
-
-		//Physics.Raycast(grabRay, 
-
-
 	}
 
 	// Use this for initialization
@@ -82,21 +92,29 @@ public class CharacterMotor : MonoBehaviour {
 
 		if (isCharacter) {
 			// Prevent movement when grappling
-			Move ();
+			if (!grabbing) {
+				Move ();
+			}
 
 			// if we hit P on the keyboard, reset the player location to the start location
-			if(Input.GetKeyDown(KeyCode.P)){
+			if (Input.GetKeyDown (KeyCode.P)) {
 				transform.position = startPosition;
 			}
 
-			if(Input.GetKeyDown(KeyCode.Q)){
+			if (Input.GetKeyDown (KeyCode.Q) && !grabbing && !grabbed) {
 				characterAnimator.SetTrigger ("Grappling");
+				grapplingStart ();
 			}
 
 			if (Input.GetKeyDown (KeyCode.E) && grabbed) {
 				cancelGrapple ();
 			}
+		} else {
+			if (grabbed) {
+				transform.localPosition = grabbedPosition;
+			}
 		}
+			
 
 	}
 
@@ -135,9 +153,12 @@ public class CharacterMotor : MonoBehaviour {
 		// while CharacterController.Move allows us to take colliders into consideration
 		transform.Translate(inputDirection, Space.World);
 
-		if (enemyGameObject != null) {
+		if (enemyGameObject != null && !grabbed) {
 			// Rotate character toward enemy
 			Vector3 targetDirection = enemyGameObject.transform.position - transform.position;
+
+			// Lock rotation of the body to the correct Axis
+			targetDirection.y = 0;
 			transform.forward = Vector3.RotateTowards (transform.forward, targetDirection, rotationSpeed * Time.deltaTime, 0);
 		}
 	}
