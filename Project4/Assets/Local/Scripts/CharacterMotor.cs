@@ -3,12 +3,14 @@ using System.Collections;
 
 public class CharacterMotor : MonoBehaviour {
 
+	public bool isCharacter = false;
+	
 	public GameObject enemyGameObject;
 	public GameObject hitCheckGameObject;
 
 	public Vector3 grabbedPosition;
-
-	public bool isCharacter = false;
+	
+	public float rotationSpeed = 2f;
 	public float distanceGrab = 2.6f;
 
 	// States
@@ -19,7 +21,6 @@ public class CharacterMotor : MonoBehaviour {
 
 	// set the move speed for the character in the inspector
 	public float moveSpeed = 10;
-	public float rotationSpeed = 2f;
 
 	// set the fall speed for the character in the inspector
 	public float fallSpeed = 30;
@@ -64,6 +65,10 @@ public class CharacterMotor : MonoBehaviour {
 				Debug.Log ("TOO FAR");
 			}
 		}
+
+		//Physics.Raycast(grabRay, 
+
+
 	}
 
 	// Use this for initialization
@@ -97,7 +102,7 @@ public class CharacterMotor : MonoBehaviour {
 			}
 
 			// if we hit P on the keyboard, reset the player location to the start location
-			if (Input.GetKeyDown (KeyCode.P)) {
+			if(Input.GetKeyDown(KeyCode.P)){
 				transform.position = startPosition;
 			}
 
@@ -114,7 +119,6 @@ public class CharacterMotor : MonoBehaviour {
 				transform.localPosition = grabbedPosition;
 			}
 		}
-			
 
 	}
 
@@ -153,11 +157,11 @@ public class CharacterMotor : MonoBehaviour {
 		// while CharacterController.Move allows us to take colliders into consideration
 		transform.Translate(inputDirection, Space.World);
 
-		if (enemyGameObject != null && !grabbed) {
+		if (enemyGameObject != null) {
 			// Rotate character toward enemy
 			Vector3 targetDirection = enemyGameObject.transform.position - transform.position;
 
-			// Lock rotation of the body to the correct Axis
+			// :ock rotation of the body to the correct Axis
 			targetDirection.y = 0;
 			transform.forward = Vector3.RotateTowards (transform.forward, targetDirection, rotationSpeed * Time.deltaTime, 0);
 		}
@@ -185,6 +189,7 @@ public class CharacterMotor : MonoBehaviour {
 
 	void freedFromGrapple() {
 		characterAnimator.SetBool("GrappledBy", false);
+		grabbed = false;
 	}
 
 	void cancelGrapple() {
