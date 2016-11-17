@@ -10,23 +10,23 @@ public class CharacterMotor : MonoBehaviour {
 
 	public bool isCharacter = false;
 
-
 	// A varible to hold the start location
 	private Vector3 startPosition;
 
 	// set the move speed for the character in the inspector
 	public float moveSpeed = 10;
-	public float rotationSpeed = 2f;
 
 	// set the fall speed for the character in the inspector
 	public float fallSpeed = 30;
 	public float speedRatio = 1;
+	public float rotationSpeed = 2f;
 
 	// the momentum for the fall
 	public float momentum = 0;
 
 	// Check how far down we should check to register the floor to see if we are grounded. 
 	public float groundedDistanceCheck = 1.2f;
+
 
 	void Start () {
 		startPosition = transform.position;
@@ -60,8 +60,6 @@ public class CharacterMotor : MonoBehaviour {
 		if (Input.GetKeyDown (KeyCode.P)) {
 			transform.position = startPosition;
 		}
-
-
 	}
 
 	// Fall Method to make the character fall!
@@ -99,6 +97,7 @@ public class CharacterMotor : MonoBehaviour {
 
 		// while CharacterController.Move allows us to take colliders into consideration
 		transform.Translate(inputDirection, Space.World);
+
 
 		if (grappleMotorReference.enemyGameObject != null && !grappleMotorReference.grabbed) {
 			// Rotate character toward enemy
