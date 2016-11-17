@@ -46,6 +46,8 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Local\Scripts\CharacterMotor.cs" />
+     <Compile Include="Assets\Local\Scripts\GrappleMotor.cs" />
+     <Compile Include="Assets\Local\Scripts\RingMotor.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>D:/Programs/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
